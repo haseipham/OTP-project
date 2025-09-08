@@ -32,7 +32,7 @@ Security note:
   Keep otp_secret.txt and the private key file secret. Do not sync them publicly.
 """
 
-import argparse
+import argparse # command-line parsing (help messages, subcommands)
 import base64
 import binascii
 import hmac
@@ -198,6 +198,8 @@ def try_cryptography_keypair(verbose: bool) -> bool:
 
 
 # --- CLI ---
+def cmd_help(args):
+    print("No command specified. Use -h for help.")
 
 def cmd_init(args):
     secret = generate_base32_secret(args.verbose)
@@ -253,9 +255,20 @@ def cmd_uri(args):
     print(hotp_uri)
 
 
+# python otp_generator.py <subcommand> [options]
+"""
+eg..:
+    python otp_generator.py init --help
+    python otp_generator.py init -h
+    python otp_generator.py init init --account alice@example --issuer MyService
+    python otp_generator.py totp --digits 8 --period 60
+    python otp_generator.py hotp --counter 123456
+    python otp_generator.py uri --account alice@example --issuer MyService
+"""
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="TOTP/HOTP (HMAC‑SHA1) generator with verbose output and keypair helper.")
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = p.add_subparsers(dest="cmd")
+    p.set_defaults(func=cmd_help)
 
     # init
     pi = sub.add_parser("init", help="Generate OTP secret and Ed25519 keypair; print otpauth URIs")

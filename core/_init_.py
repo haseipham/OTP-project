@@ -65,12 +65,12 @@ Ví dụ sử dụng nhanh
 >>> print("Mã TOTP:", code, "còn hiệu lực", remaining, "giây")
 """
 # Can be imported as: from otp_generator import <func>
-from otp_generator import (
+# Only the WebUI-served funcs imported here.
+from otp_core import (
     generate_base32_secret,
     save_secret,
     load_secret,
     hotp,
     totp,
     format_otpauth_uri,
-    main,
 )

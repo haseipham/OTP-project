@@ -1,5 +1,5 @@
 # python -m otp instead of python -m otp_generator
-from otp_generator import (
+from otp_cli import (
     main,
 )
 if __name__ == "__main__":

@@ -58,7 +58,7 @@ Hướng dẫn dành cho các nhóm dev
 ──────────────────────────────────────────────
 Ví dụ sử dụng nhanh
 ──────────────────────────────────────────────
->>> from otp_generator import generate_base32_secret, save_secret, totp
+>>> from otp_core import generate_base32_secret, save_secret, totp
 >>> secret = generate_base32_secret()
 >>> save_secret(secret)
 >>> code, remaining = totp(secret)

@@ -93,6 +93,42 @@ def cmd_uri(args):
 def cmd_help(args):
     print("'python -m otp -h' or 'python -m otp_cli -h' for help.")
 
+# --- CLI command handlers (bổ sung verify) ---
+def cmd_verify_totp(args):
+    """
+    Xác minh mã TOTP do user nhập.
+    """
+    secret = otp_core.load_secret()
+    ok = otp_core.verify_totp(
+        secret,
+        args.code,
+        timestep=args.period,
+        digits=args.digits,
+        window=args.window,
+    )
+    if ok:
+        print("[+] TOTP code is VALID")
+    else:
+        print("[-] TOTP code is INVALID")
+
+
+def cmd_verify_hotp(args):
+    """
+    Xác minh mã HOTP do user nhập.
+    """
+    secret = otp_core.load_secret()
+    ok, new_counter = otp_core.verify_hotp(
+        secret,
+        args.code,
+        args.counter,
+        digits=args.digits,
+        look_ahead=args.look_ahead,
+    )
+    if ok:
+        print(f"[+] HOTP code is VALID (next counter = {new_counter})")
+    else:
+        print("[-] HOTP code is INVALID")
+
 # --- Argparse builder ---
 def build_parser() -> argparse.ArgumentParser:
     """
@@ -131,6 +167,26 @@ def build_parser() -> argparse.ArgumentParser:
     pu.add_argument("--digits", type=int, default=otp_core.DEFAULT_DIGITS)
     pu.add_argument("--period", type=int, default=otp_core.DEFAULT_TIME_STEP)
     pu.set_defaults(func=cmd_uri)
+
+    # verify
+    pv = sub.add_parser("verify", help="Verify an OTP code (TOTP or HOTP)")
+    sub_v = pv.add_subparsers(dest="verify_type")
+
+    # verify totp
+    pvt = sub_v.add_parser("totp", help="Verify a TOTP code")
+    pvt.add_argument("--code", required=True, help="OTP code to verify")
+    pvt.add_argument("--digits", type=int, default=otp_core.DEFAULT_DIGITS)
+    pvt.add_argument("--period", type=int, default=otp_core.DEFAULT_TIME_STEP)
+    pvt.add_argument("--window", type=int, default=1, help="Allowed +/- step window")
+    pvt.set_defaults(func=cmd_verify_totp)
+
+    # verify hotp
+    pvh = sub_v.add_parser("hotp", help="Verify a HOTP code")
+    pvh.add_argument("--code", required=True, help="OTP code to verify")
+    pvh.add_argument("--counter", type=int, required=True, help="Current HOTP counter")
+    pvh.add_argument("--digits", type=int, default=otp_core.DEFAULT_DIGITS)
+    pvh.add_argument("--look-ahead", type=int, default=1, help="Allowed counter look-ahead")
+    pvh.set_defaults(func=cmd_verify_hotp)
 
     return p
 

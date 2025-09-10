@@ -329,6 +329,64 @@ def try_cryptography_keypair(verbose: bool = False) -> bool:
         print(f"[*] Generated {PRIV_KEY_FILE} (PEM PKCS8) and {PUB_KEY_FILE} (OpenSSH) via cryptography")
     return True
 
+# --- OTP verification helpers ---------------------------------------------
+def verify_hotp(secret_b32: str, code: str, counter: int,
+                digits: int = DEFAULT_DIGITS, look_ahead: int = 1) -> Tuple[bool, int]:
+    """
+    Xác minh mã HOTP do user nhập.
+
+    Arguments:
+        secret_b32: Base32 secret
+        code: mã OTP (chuỗi)
+        counter: counter hiện tại
+        digits: số chữ số OTP
+        look_ahead: cho phép thử trước N counter tiếp theo (default=1)
+
+    Returns:
+        (ok, new_counter)
+        - ok: True nếu xác minh thành công
+        - new_counter: counter nên update (theo chuẩn RFC, để sync)
+    """
+    for i in range(look_ahead + 1):
+        expected = hotp(secret_b32, counter + i, digits)
+        if hmac.compare_digest(expected, code):
+            return True, counter + i + 1  # RFC4226: advance counter sau khi dùng
+    return False, counter
+
+
+def verify_totp(secret_b32: str, code: str,
+                timestep: int = DEFAULT_TIME_STEP,
+                digits: int = DEFAULT_DIGITS,
+                window: int = 1, t0: int = 0,
+                timestamp: int = None) -> bool:
+    """
+    Xác minh mã TOTP do user nhập (theo RFC6238).
+
+    Arguments:
+        secret_b32: Base32 secret
+        code: mã OTP (chuỗi)
+        timestep: step giây (thường 30s)
+        digits: số chữ số
+        window: cho phép lệch ±window steps (default=1)
+        t0: offset (default=0)
+        timestamp: epoch seconds (mặc định time.time())
+
+    Returns:
+        True nếu hợp lệ, False nếu sai
+    """
+    if timestamp is None:
+        timestamp = int(time.time())
+    counter = (timestamp - t0) // timestep
+
+    for offset in range(-window, window + 1):
+        test_counter = counter + offset
+        if test_counter < 0:
+            continue
+        expected = hotp(secret_b32, test_counter, digits)
+        if hmac.compare_digest(expected, code):
+            return True
+    return False
+
 
 # --- Example usage helpers (dành cho WebUI) -------------------------------
 def init_secret_and_keypair(

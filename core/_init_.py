@@ -66,6 +66,7 @@ Ví dụ sử dụng nhanh
 """
 # Can be imported as: from otp_generator import <func>
 # Only the WebUI-served funcs imported here.
+# Eg:
 from otp_core import (
     generate_base32_secret,
     save_secret,

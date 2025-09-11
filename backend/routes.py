@@ -42,8 +42,6 @@ from core.otp_core import (
 otp_bp = Blueprint('otp', __name__)
 
 
-import logging  # Optional: Có thể dùng print thay vì logging
-
 @otp_bp.route('/generate_secret', methods=['POST'])
 def generate_secret():
     """
@@ -51,8 +49,6 @@ def generate_secret():
 
       curl -X POST http://localhost:5000/generate_secret -H "Content-Type: application/json" -d "{}"
 
-    Hoặc với params: 
-      curl -X POST http://localhost:5000/generate_secret -H "Content-Type: application/json" -d '{"digits": 8, "period": 60, "try_keypair": true, "verbose": true}'
     """
     data = request.get_json() or {}
     digits = data.get('digits', 6)
@@ -60,48 +56,23 @@ def generate_secret():
     try_keypair = data.get('try_keypair', False)
     verbose = data.get('verbose', False)
     
-    try:
-        # Bước 1: Tạo và lưu secret
-        secret = _create_and_save_secret(digits, period)
-        
-        # Bước 2: Tạo keypair nếu yêu cầu
-        keypair_ok = _generate_keypair_if_requested(try_keypair, verbose)
-        
-        # Log thành công (optional)
-        print(f"[INFO] Generated secret: {secret[:8]}... with digits={digits}, period={period}")
-        
-        return jsonify({
-            "secret": secret,
-            "success": True,
-            "keypair_generated": keypair_ok
-        })
-    
-    except Exception as e:
-        # Log lỗi (optional)
-        print(f"[ERROR] Failed to generate secret: {e}")
-        return jsonify({
-            "secret": None,
-            "success": False,
-            "keypair_generated": False,
-            "error": str(e)
-        }), 500
-
-
-def _create_and_save_secret(digits: int, period: int) -> str:
-    """Tạo secret Base32 ngẫu nhiên và lưu vào file JSON."""
+    # Tạo secret key ngẫu nhiên (20 bytes → Base32)
     secret = generate_base32_secret()
+    # Lưu secret và metadata vào file otp_secret.json
     save_secret(secret, digits=digits, period=period)
-    return secret
-
-
-def _generate_keypair_if_requested(try_keypair: bool, verbose: bool) -> bool:
-    """Tạo Ed25519 keypair nếu yêu cầu, fallback sang cryptography."""
-    if not try_keypair:
-        return False
-    keypair_ok = generate_ed25519_keypair(verbose=verbose)
-    if not keypair_ok:
-        keypair_ok = try_cryptography_keypair(verbose=verbose)
-    return keypair_ok
+    
+    # Tạo keypair SSH nếu được yêu cầu (tính năng bổ sung)
+    keypair_ok = False
+    if try_keypair:
+        keypair_ok = generate_ed25519_keypair(verbose=verbose)
+        if not keypair_ok:
+            keypair_ok = try_cryptography_keypair(verbose=verbose)
+    
+    return jsonify({
+        "secret": secret,
+        "success": True,
+        "keypair_generated": keypair_ok
+    })
 
 
 @otp_bp.route('/load_secret', methods=['GET'])

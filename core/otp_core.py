@@ -30,6 +30,8 @@ SECRET_BYTES = 20           # 160-bit secret (common practice)
 SECRET_FILE = "otp_secret.txt"
 PRIV_KEY_FILE = "ed25519_key"
 PUB_KEY_FILE = PRIV_KEY_FILE + ".pub"
+USED_OTP_FILE = "otp_used_codes.txt"
+
 
 
 # --- Utility / I/O ---------------------------------------------------------
@@ -330,63 +332,71 @@ def try_cryptography_keypair(verbose: bool = False) -> bool:
     return True
 
 # --- OTP verification helpers ---------------------------------------------
-def verify_hotp(secret_b32: str, code: str, counter: int,
-                digits: int = DEFAULT_DIGITS, look_ahead: int = 1) -> Tuple[bool, int]:
-    """
-    Xác minh mã HOTP do user nhập.
 
-    Arguments:
-        secret_b32: Base32 secret
-        code: mã OTP (chuỗi)
-        counter: counter hiện tại
-        digits: số chữ số OTP
-        look_ahead: cho phép thử trước N counter tiếp theo (default=1)
+def _load_used_otps(path: str = USED_OTP_FILE) -> set:
+    """Đọc file chứa các mã OTP đã dùng, trả về set."""
+    if not os.path.exists(path):
+        return set()
+    with open(path, "r", encoding="utf-8") as f:
+        return set(line.strip() for line in f if line.strip())
 
-    Returns:
-        (ok, new_counter)
-        - ok: True nếu xác minh thành công
-        - new_counter: counter nên update (theo chuẩn RFC, để sync)
-    """
-    for i in range(look_ahead + 1):
-        expected = hotp(secret_b32, counter + i, digits)
-        if hmac.compare_digest(expected, code):
-            return True, counter + i + 1  # RFC4226: advance counter sau khi dùng
-    return False, counter
 
+def _save_used_otps(used: set, path: str = USED_OTP_FILE) -> None:
+    """Ghi set các OTP đã dùng xuống file."""
+    with open(path, "w", encoding="utf-8") as f:
+        for code in used:
+            f.write(code + "\n")
 
 def verify_totp(secret_b32: str, code: str,
                 timestep: int = DEFAULT_TIME_STEP,
                 digits: int = DEFAULT_DIGITS,
                 window: int = 1, t0: int = 0,
-                timestamp: int = None) -> bool:
+                timestamp: int = None,
+                block_reuse: bool = True) -> bool:
     """
-    Xác minh mã TOTP do user nhập (theo RFC6238).
-
-    Arguments:
-        secret_b32: Base32 secret
-        code: mã OTP (chuỗi)
-        timestep: step giây (thường 30s)
-        digits: số chữ số
-        window: cho phép lệch ±window steps (default=1)
-        t0: offset (default=0)
-        timestamp: epoch seconds (mặc định time.time())
-
-    Returns:
-        True nếu hợp lệ, False nếu sai
+    Xác minh mã TOTP do user nhập (theo RFC6238), kèm cơ chế block mã đã dùng.
     """
     if timestamp is None:
         timestamp = int(time.time())
-    counter = (timestamp - t0) // timestep
 
+    # chặn reuse
+    if block_reuse:
+        used = _load_used_otps()
+        if code in used:
+            return False  # đã dùng rồi
+
+    counter = (timestamp - t0) // timestep
     for offset in range(-window, window + 1):
         test_counter = counter + offset
         if test_counter < 0:
             continue
         expected = hotp(secret_b32, test_counter, digits)
         if hmac.compare_digest(expected, code):
+            if block_reuse:
+                used.add(code)
+                _save_used_otps(used)
             return True
     return False
+def verify_hotp(secret_b32: str, code: str, counter: int,
+                digits: int = DEFAULT_DIGITS, look_ahead: int = 1,
+                block_reuse: bool = True) -> Tuple[bool, int]:
+    """
+    Xác minh mã HOTP do user nhập, kèm cơ chế block mã đã dùng.
+    """
+    # chặn reuse
+    if block_reuse:
+        used = _load_used_otps()
+        if code in used:
+            return False, counter
 
+    for i in range(look_ahead + 1):
+        expected = hotp(secret_b32, counter + i, digits)
+        if hmac.compare_digest(expected, code):
+            if block_reuse:
+                used.add(code)
+                _save_used_otps(used)
+            return True, counter + i + 1
+    return False, counter
 
 # --- Example usage helpers (dành cho WebUI) -------------------------------
 def init_secret_and_keypair(

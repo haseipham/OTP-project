@@ -34,7 +34,11 @@ PUB_KEY_FILE = PRIV_KEY_FILE + ".pub"
 USED_OTP_FILE = "otp_used_codes.txt"
 SECRET_FILE = "otp_secret.json"
 
+def _secret_file(user: str) -> str:
+    return f"otp_secret_{user}.json"
 
+def _used_file(user: str) -> str:
+    return f"otp_used_codes_{user}.txt"
 
 # --- Utility / I/O ---------------------------------------------------------
 def generate_base32_secret() -> str:
@@ -71,23 +75,6 @@ def generate_base32_secret() -> str:
 #    with open(path, "w", encoding="utf-8") as f:
 #        f.write(secret_b32 + "\n")
 
-def save_secret(secret_b32: str, digits: int = DEFAULT_DIGITS,
-                period: int = DEFAULT_TIME_STEP, algo: str = "SHA1",
-                path: str = SECRET_FILE) -> None:
-    """
-    Lưu secret và metadata vào file JSON.
-    """
-    data = {
-        "secret": secret_b32,
-        "digits": digits,
-        "period": period,
-        "algo": algo,
-    }
-    if os.path.exists(path):
-        shutil.copy2(path, path + ".bak")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f)
-
 #def load_secret(path: str = SECRET_FILE) -> str:
 #    """
 #    Đọc và trả về secret Base32 từ file.
@@ -101,14 +88,23 @@ def save_secret(secret_b32: str, digits: int = DEFAULT_DIGITS,
 #    with open(path, "r", encoding="utf-8") as f:
 #        return f.read().strip()
 
-def load_secret(path: str = SECRET_FILE) -> dict:
-    """
-    Đọc secret + metadata từ file JSON.
-    Trả về dict: {"secret":..., "digits":..., "period":..., "algo":...}
-    """
+def save_secret(secret_b32: str, user: str,
+                digits: int = DEFAULT_DIGITS,
+                period: int = DEFAULT_TIME_STEP,
+                algo: str = "SHA1") -> None:
+    """Lưu secret và metadata cho user vào file JSON riêng."""
+    data = {"secret": secret_b32, "digits": digits, "period": period, "algo": algo}
+    path = _secret_file(user)
+    if os.path.exists(path):
+        shutil.copy2(path, path + ".bak")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f)
+
+def load_secret(user: str) -> dict:
+    """Đọc secret + metadata cho user từ file JSON."""
+    path = _secret_file(user)
     with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return data
+        return json.load(f)
 
 # --- RFC helpers -----------------------------------------------------------
 def int_to_bytes(i: int) -> bytes:
@@ -359,37 +355,33 @@ def try_cryptography_keypair(verbose: bool = False) -> bool:
 
 # --- OTP verification helpers ---------------------------------------------
 
-def _load_used_otps(path: str = USED_OTP_FILE) -> set:
-    """Đọc file chứa các mã OTP đã dùng, trả về set."""
+def _load_used_otps(user: str) -> set:
+    path = _used_file(user)
     if not os.path.exists(path):
         return set()
     with open(path, "r", encoding="utf-8") as f:
         return set(line.strip() for line in f if line.strip())
 
-
-def _save_used_otps(used: set, path: str = USED_OTP_FILE) -> None:
-    """Ghi set các OTP đã dùng xuống file."""
+def _save_used_otps(used: set, user: str) -> None:
+    path = _used_file(user)
     with open(path, "w", encoding="utf-8") as f:
         for code in used:
             f.write(code + "\n")
 
-def verify_totp(secret_b32: str, code: str,
+def verify_totp(secret_b32: str, code: str, user: str,
                 timestep: int = DEFAULT_TIME_STEP,
                 digits: int = DEFAULT_DIGITS,
                 window: int = 1, t0: int = 0,
                 timestamp: int = None,
                 block_reuse: bool = True) -> bool:
-    """
-    Xác minh mã TOTP do user nhập (theo RFC6238), kèm cơ chế block mã đã dùng.
-    """
+    """Verify mã TOTP cho user."""
     if timestamp is None:
         timestamp = int(time.time())
 
-    # chặn reuse
     if block_reuse:
-        used = _load_used_otps()
+        used = _load_used_otps(user)
         if code in used:
-            return False  # đã dùng rồi
+            return False
 
     counter = (timestamp - t0) // timestep
     for offset in range(-window, window + 1):
@@ -400,18 +392,16 @@ def verify_totp(secret_b32: str, code: str,
         if hmac.compare_digest(expected, code):
             if block_reuse:
                 used.add(code)
-                _save_used_otps(used)
+                _save_used_otps(used, user)
             return True
     return False
-def verify_hotp(secret_b32: str, code: str, counter: int,
+
+def verify_hotp(secret_b32: str, code: str, counter: int, user: str,
                 digits: int = DEFAULT_DIGITS, look_ahead: int = 1,
                 block_reuse: bool = True) -> Tuple[bool, int]:
-    """
-    Xác minh mã HOTP do user nhập, kèm cơ chế block mã đã dùng.
-    """
-    # chặn reuse
+    """Verify mã HOTP cho user."""
     if block_reuse:
-        used = _load_used_otps()
+        used = _load_used_otps(user)
         if code in used:
             return False, counter
 
@@ -420,10 +410,9 @@ def verify_hotp(secret_b32: str, code: str, counter: int,
         if hmac.compare_digest(expected, code):
             if block_reuse:
                 used.add(code)
-                _save_used_otps(used)
+                _save_used_otps(used, user)
             return True, counter + i + 1
     return False, counter
-
 # --- Example usage helpers (dành cho WebUI) -------------------------------
 def init_secret_and_keypair(
     account: str = "user@example",

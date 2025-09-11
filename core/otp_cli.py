@@ -17,14 +17,13 @@ import otp_core  # import toàn bộ logic từ file core
 def cmd_init(args):
     """
     Xử lý lệnh `init`:
-    - Tạo secret mới, lưu vào file
-    - Thử tạo keypair (ssh-keygen / cryptography)
+    - Tạo secret mới, lưu vào file JSON (secret + digits + period + algo)
+    - Thử tạo keypair
     - In ra TOTP & HOTP URI
     """
     secret = otp_core.generate_base32_secret()
-    otp_core.save_secret(secret)
+    otp_core.save_secret(secret, digits=args.digits, period=args.period)
 
-    # thử tạo keypair
     ok = otp_core.generate_ed25519_keypair(verbose=args.verbose)
     if not ok:
         ok = otp_core.try_cryptography_keypair(verbose=args.verbose)
@@ -42,20 +41,21 @@ def cmd_init(args):
 
 def cmd_totp(args):
     """
-    Xử lý lệnh `totp`:
-    - Load secret từ file
-    - Liên tục sinh mã TOTP theo thời gian thực
-    - In ra mỗi khi mã thay đổi
+    Xử lý lệnh `totp`: sinh mã TOTP theo config trong file (hoặc override bằng args).
     """
-    secret = otp_core.load_secret()
-    print("Press Ctrl+C to quit. Generating TOTP in real time...\n")
+    cfg = otp_core.load_secret()
+    secret = cfg["secret"]
+    digits = args.digits or cfg.get("digits", otp_core.DEFAULT_DIGITS)
+    period = args.period or cfg.get("period", otp_core.DEFAULT_TIME_STEP)
+
+    print(f"Press Ctrl+C to quit. Generating {digits}-digit TOTP every {period}s...\n")
     last_code = None
     try:
         while True:
             now = int(time.time())
-            code, remaining = otp_core.totp(secret, now, args.period, 0, args.digits)
+            code, remaining = otp_core.totp(secret, now, period, 0, digits)
             if code != last_code:
-                print(f"TOTP: {code}  (valid ~{remaining:2d}s)")
+                print(f"TOTP ({digits}d): {code}  (valid ~{remaining:2d}s)")
                 last_code = code
             else:
                 print(f".. {remaining:2d}s left", end='\r', flush=True)
@@ -66,44 +66,54 @@ def cmd_totp(args):
 
 def cmd_hotp(args):
     """
-    Xử lý lệnh `hotp`:
-    - Load secret từ file
-    - Sinh mã HOTP cho counter chỉ định
+    Xử lý lệnh `hotp`: sinh mã HOTP theo config.
     """
-    secret = otp_core.load_secret()
-    code = otp_core.hotp(secret, args.counter, args.digits)
-    print(f"HOTP(counter={args.counter}): {code}")
+    cfg = otp_core.load_secret()
+    secret = cfg["secret"]
+    digits = args.digits or cfg.get("digits", otp_core.DEFAULT_DIGITS)
+
+    code = otp_core.hotp(secret, args.counter, digits)
+    print(f"HOTP({digits}d, counter={args.counter}): {code}")
 
 
 def cmd_uri(args):
     """
-    Xử lý lệnh `uri`:
-    - Load secret từ file
-    - In ra TOTP & HOTP otpauth URI
+    In lại URI từ secret + config đã lưu.
     """
-    secret = otp_core.load_secret()
+    cfg = otp_core.load_secret()
+    secret = cfg["secret"]
+    digits = cfg.get("digits", otp_core.DEFAULT_DIGITS)
+    period = cfg.get("period", otp_core.DEFAULT_TIME_STEP)
+
     totp_uri, hotp_uri = otp_core.format_otpauth_uri(
-        secret, args.account, args.issuer, digits=args.digits, period=args.period
+        secret, args.account, args.issuer, digits=digits, period=period
     )
-    print("TOTP URI:")
-    print(totp_uri)
-    print("\nHOTP URI:")
-    print(hotp_uri)
+    print("TOTP URI:\n", totp_uri)
+    print("\nHOTP URI:\n", hotp_uri)
+
 
 def cmd_help(args):
     print("'python -m otp -h' or 'python -m otp_cli -h' for help.")
 
-# --- CLI command handlers (bổ sung verify) ---
+
 def cmd_verify_totp(args):
     """
-    Xác minh mã TOTP do user nhập.
+    Verify TOTP code từ user.
     """
-    secret = otp_core.load_secret()
+    cfg = otp_core.load_secret()
+    secret = cfg["secret"]
+    digits = args.digits or cfg.get("digits", otp_core.DEFAULT_DIGITS)
+    period = args.period or cfg.get("period", otp_core.DEFAULT_TIME_STEP)
+
+    if digits != otp_core.DEFAULT_DIGITS:
+        print(f"[!] Warning: using {digits} digits. "
+              f"Ensure your Authenticator app is configured for {digits}-digit codes!")
+
     ok = otp_core.verify_totp(
         secret,
         args.code,
-        timestep=args.period,
-        digits=args.digits,
+        timestep=period,
+        digits=digits,
         window=args.window,
     )
     if ok:
@@ -114,14 +124,21 @@ def cmd_verify_totp(args):
 
 def cmd_verify_hotp(args):
     """
-    Xác minh mã HOTP do user nhập.
+    Verify HOTP code từ user.
     """
-    secret = otp_core.load_secret()
+    cfg = otp_core.load_secret()
+    secret = cfg["secret"]
+    digits = args.digits or cfg.get("digits", otp_core.DEFAULT_DIGITS)
+
+    if digits != otp_core.DEFAULT_DIGITS:
+        print(f"[!] Warning: using {digits} digits. "
+              f"Ensure your Authenticator app is configured for {digits}-digit codes!")
+
     ok, new_counter = otp_core.verify_hotp(
         secret,
         args.code,
         args.counter,
-        digits=args.digits,
+        digits=digits,
         look_ahead=args.look_ahead,
     )
     if ok:
@@ -129,12 +146,9 @@ def cmd_verify_hotp(args):
     else:
         print("[-] HOTP code is INVALID")
 
+
 # --- Argparse builder ---
 def build_parser() -> argparse.ArgumentParser:
-    """
-    Tạo argparse parser với các subcommand:
-    - init, totp, hotp, uri
-    """
     p = argparse.ArgumentParser(description="TOTP/HOTP generator CLI (wrapper for otp_core.py)")
     sub = p.add_subparsers(dest="cmd")
     p.set_defaults(func=cmd_help)
@@ -150,41 +164,37 @@ def build_parser() -> argparse.ArgumentParser:
 
     # totp
     pt = sub.add_parser("totp", help="Show TOTP code in real time")
-    pt.add_argument("--digits", type=int, default=otp_core.DEFAULT_DIGITS)
-    pt.add_argument("--period", type=int, default=otp_core.DEFAULT_TIME_STEP)
+    pt.add_argument("--digits", type=int, help="Override number of digits")
+    pt.add_argument("--period", type=int, help="Override TOTP period (seconds)")
     pt.set_defaults(func=cmd_totp)
 
     # hotp
     ph = sub.add_parser("hotp", help="Generate HOTP code for a specific counter")
     ph.add_argument("--counter", type=int, required=True)
-    ph.add_argument("--digits", type=int, default=otp_core.DEFAULT_DIGITS)
+    ph.add_argument("--digits", type=int, help="Override number of digits")
     ph.set_defaults(func=cmd_hotp)
 
     # uri
     pu = sub.add_parser("uri", help="Print otpauth URIs for TOTP/HOTP")
     pu.add_argument("--account", default="user@example")
     pu.add_argument("--issuer", default="otp-tool")
-    pu.add_argument("--digits", type=int, default=otp_core.DEFAULT_DIGITS)
-    pu.add_argument("--period", type=int, default=otp_core.DEFAULT_TIME_STEP)
     pu.set_defaults(func=cmd_uri)
 
     # verify
     pv = sub.add_parser("verify", help="Verify an OTP code (TOTP or HOTP)")
     sub_v = pv.add_subparsers(dest="verify_type")
 
-    # verify totp
     pvt = sub_v.add_parser("totp", help="Verify a TOTP code")
     pvt.add_argument("--code", required=True, help="OTP code to verify")
-    pvt.add_argument("--digits", type=int, default=otp_core.DEFAULT_DIGITS)
-    pvt.add_argument("--period", type=int, default=otp_core.DEFAULT_TIME_STEP)
+    pvt.add_argument("--digits", type=int, help="Override number of digits")
+    pvt.add_argument("--period", type=int, help="Override TOTP period")
     pvt.add_argument("--window", type=int, default=1, help="Allowed +/- step window")
     pvt.set_defaults(func=cmd_verify_totp)
 
-    # verify hotp
     pvh = sub_v.add_parser("hotp", help="Verify a HOTP code")
     pvh.add_argument("--code", required=True, help="OTP code to verify")
     pvh.add_argument("--counter", type=int, required=True, help="Current HOTP counter")
-    pvh.add_argument("--digits", type=int, default=otp_core.DEFAULT_DIGITS)
+    pvh.add_argument("--digits", type=int, help="Override number of digits")
     pvh.add_argument("--look-ahead", type=int, default=1, help="Allowed counter look-ahead")
     pvh.set_defaults(func=cmd_verify_hotp)
 
@@ -192,7 +202,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main():
-    """Entry point CLI: parse args và gọi hàm tương ứng."""
     parser = build_parser()
     args = parser.parse_args()
     if hasattr(args, "func"):

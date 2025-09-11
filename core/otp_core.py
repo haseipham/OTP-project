@@ -22,15 +22,17 @@ import struct
 import time
 import shutil
 import subprocess
+import json
 
 # --- Config / constants ----------------------------------------------------
 DEFAULT_DIGITS = 6          # chuẩn: 6 chữ số
 DEFAULT_TIME_STEP = 30      # TOTP step (giây)
 SECRET_BYTES = 20           # 160-bit secret (common practice)
-SECRET_FILE = "otp_secret.txt"
+#SECRET_FILE = "otp_secret.txt"
 PRIV_KEY_FILE = "ed25519_key"
 PUB_KEY_FILE = PRIV_KEY_FILE + ".pub"
 USED_OTP_FILE = "otp_used_codes.txt"
+SECRET_FILE = "otp_secret.json"
 
 
 
@@ -51,38 +53,62 @@ def generate_base32_secret() -> str:
     b32 = base64.b32encode(raw).decode("ascii").strip()
     return b32
 
+""" file secret đơn giản (một dòng) — hiện không dùng nữa, chuyển sang JSON"""
+#def save_secret(secret_b32: str, path: str = SECRET_FILE) -> None:
+#    """
+#    Lưu secret Base32 vào file (một dòng).
+#
+#    - Nếu file đã tồn tại, tạo backup path + ".bak".
+#    - Viết text mode, newline ở cuối.
+#    - Không thay đổi permission file ở đây (tùy hệ thống), nhưng khuyến nghị chmod 600 nếu cần.
+#
+#    Arguments:
+#        secret_b32: Base32 secret
+#        path: đường dẫn file để lưu (mặc định SECRET_FILE)
+#    """
+#    if os.path.exists(path):
+#        shutil.copy2(path, path + ".bak")
+#    with open(path, "w", encoding="utf-8") as f:
+#        f.write(secret_b32 + "\n")
 
-def save_secret(secret_b32: str, path: str = SECRET_FILE) -> None:
+def save_secret(secret_b32: str, digits: int = DEFAULT_DIGITS,
+                period: int = DEFAULT_TIME_STEP, algo: str = "SHA1",
+                path: str = SECRET_FILE) -> None:
     """
-    Lưu secret Base32 vào file (một dòng).
-
-    - Nếu file đã tồn tại, tạo backup path + ".bak".
-    - Viết text mode, newline ở cuối.
-    - Không thay đổi permission file ở đây (tùy hệ thống), nhưng khuyến nghị chmod 600 nếu cần.
-
-    Arguments:
-        secret_b32: Base32 secret
-        path: đường dẫn file để lưu (mặc định SECRET_FILE)
+    Lưu secret và metadata vào file JSON.
     """
+    data = {
+        "secret": secret_b32,
+        "digits": digits,
+        "period": period,
+        "algo": algo,
+    }
     if os.path.exists(path):
         shutil.copy2(path, path + ".bak")
     with open(path, "w", encoding="utf-8") as f:
-        f.write(secret_b32 + "\n")
+        json.dump(data, f)
 
+#def load_secret(path: str = SECRET_FILE) -> str:
+#    """
+#    Đọc và trả về secret Base32 từ file.
+#
+#    - Raises FileNotFoundError nếu file không tồn tại.
+#    - Trả về chuỗi đã strip() (loại whitespace/newline).
+#
+#    Arguments:
+#        path: đường dẫn file chứa secret
+#    """
+#    with open(path, "r", encoding="utf-8") as f:
+#        return f.read().strip()
 
-def load_secret(path: str = SECRET_FILE) -> str:
+def load_secret(path: str = SECRET_FILE) -> dict:
     """
-    Đọc và trả về secret Base32 từ file.
-
-    - Raises FileNotFoundError nếu file không tồn tại.
-    - Trả về chuỗi đã strip() (loại whitespace/newline).
-
-    Arguments:
-        path: đường dẫn file chứa secret
+    Đọc secret + metadata từ file JSON.
+    Trả về dict: {"secret":..., "digits":..., "period":..., "algo":...}
     """
     with open(path, "r", encoding="utf-8") as f:
-        return f.read().strip()
-
+        data = json.load(f)
+    return data
 
 # --- RFC helpers -----------------------------------------------------------
 def int_to_bytes(i: int) -> bytes:

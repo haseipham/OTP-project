@@ -135,7 +135,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-# Môi trường ảo Python
 .env
 .envrc
 .venv
@@ -208,34 +207,19 @@ marimo/_lsp/
 __marimo__/
 
 # Python cache
-# File biên dịch và cache của Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 
 # Database
 *.db
-# File bí mật và file tạm của dự án OTP
-otp_secret_*.json
-otp_used_codes_*.txt
-*.bak
-ed25519_key
-ed25519_key.pub
 
 # Environment variables
 .env
-# Cấu hình của các IDE
-.idea/
-.vscode/
 
 # Jupyter notebooks checkpoints
 .ipynb_checkpoints/
 
 # OS files (Windows, Mac)
-# File hệ thống
 .DS_Store
 Thumbs.db
 
-# Flask instance folder
-instance/

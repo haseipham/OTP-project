@@ -11,8 +11,7 @@ CÁC TÍNH NĂNG CHÍNH
 - Tự động import routes từ backend/routes.py
 - Trang chủ với hướng dẫn API endpoints
 """
-
-from flask import Flask
+from flask import Flask, render_template
 from flask_cors import CORS
 import sys
 import os
@@ -23,7 +22,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # KHỞI TẠO FLASK APP
 # Flask app là core của web server, xử lý tất cả HTTP requests
-app = Flask(__name__)
+app = Flask(__name__,
+            template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
+            static_folder=os.path.join(os.path.dirname(__file__), '..', 'templates')
+            )
 
 # BẬT CORS (Cross-Origin Resource Sharing)
 # Cho phép frontend (chạy trên domain/port khác) gọi API đến backend
@@ -32,34 +34,23 @@ CORS(app)
 
 # IMPORT VÀ ĐĂNG KÝ ROUTES
 # Blueprint giúp tổ chức code thành modules độc lập
-from backend.routes import otp_bp  # Import OTP API routes blueprint
+from backend.routes import otp_bp      # API cũ (single-user)
+from backend.api_v2 import otp_bp_v2   # API mới (multi-user)
 
 # Đăng ký blueprint với app, tất cả routes sẽ có prefix mặc định
 app.register_blueprint(otp_bp)
+app.register_blueprint(otp_bp_v2)
 
 # ROOT ENDPOINT - TRANG CHỦ API
 # Trả về thông tin cơ bản và danh sách endpoints available
 @app.route('/')
 def index():
     """
-    TRANG CHỦ API - HIỂN THỊ TẤT CẢ ENDPOINTS
+    TRANG CHỦ - HIỂN THỊ GIAO DIỆN WEB
     
     Truy cập: http://localhost:5000
-    
-    Đây là trang documentation tự động, giúp người dùng biết các endpoints có sẵn
     """
-    return {
-        "message": "OTP Backend API is running",
-        "endpoints": {
-            "load_secret": "GET /load_secret",
-            "totp": "GET /totp", 
-            "hotp": "GET /hotp?counter=<number>",
-            "otpauth_uri": "GET /otpauth_uri",
-            "generate_secret": "POST /generate_secret",
-            "verify_totp": "POST /verify_totp",
-            "verify_hotp": "POST /verify_hotp"
-        }
-    }
+    return render_template('index(test).html')
 
 
 # KHỞI CHẠY SERVER

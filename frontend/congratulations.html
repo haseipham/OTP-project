@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Congratulations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    body {
+    background-color: #fcf6e8;
+    background-image: radial-gradient(#f9e3ae 1px, transparent 1px);
+    background-size: 20px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Pacifico', cursive;
+    text-align: center;
+    overflow: hidden; 
+}
+
+.confetti-container {
+    position: relative;
+    width: 100vw; 
+    height: 100vh;
+}
+
+.content-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.congrats-text {
+    font-size: 3.5rem;
+    font-family: 'Pacifico', cursive;
+    color: #002e4d;
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
+    margin-bottom: 20px;
+}
+
+.back-home-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    background-color: #002e4d;
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: bold;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.back-home-btn:hover {
+    background-color: #004d80;
+    transform: scale(1.05);
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    z-index: 1; 
+}
+  </style>
+</head>
+<body>
+  <div class="confetti-container">
+    <div class="content-wrapper">
+      <h1 class="congrats-text">🎉 Congratulations 🎉</h1>
+      <a href="#" class="back-home-btn">Back to home</a>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('.confetti-container');
+
+    function createConfetti() {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.backgroundColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+        confetti.style.left = `${Math.random() * 100}%`;
+        container.appendChild(confetti);
+
+        confetti.animate([
+            { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+            { transform: `translateY(100vh) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+        ], {
+            duration: Math.random() * 3000 + 3000, 
+            easing: 'ease-in',
+            fill: 'forwards'
+        });
+
+        confetti.addEventListener('animationend', () => {
+            confetti.remove();
+        });
+    }
+
+    function burstConfetti() {
+        for (let i = 0; i < 100; i++) {
+            createConfetti();
+        }
+    }
+
+    burstConfetti();
+});
+  </script>
+</body>
+</html>

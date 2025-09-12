@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Form</title>
+    <style>
+        /* Reset box-sizing để tính toán kích thước chính xác */
+        * {
+            box-sizing: border-box;
+        }
+
+        /* Cài đặt chung cho toàn trang */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e3f2fd; /* Màu xanh dương nhạt cho nền */
+            margin: 0;
+            padding: 0;
+            display: flex; /* Căn giữa theo cả 2 chiều */
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Chiều cao toàn màn hình */
+        }
+
+        /* Container chính của form */
+        .main {
+            background-color: #fff; /* Nền trắng của form */
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.2); /* Đổ bóng nhẹ màu xanh */
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1565c0; /* Màu xanh dương đậm */
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            text-align: center;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        /* Label và input đều là block để xếp dọc */
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #2196f3; /* Khi được chọn, viền chuyển xanh */
+            outline: none;
+        }
+
+        /* Nút submit */
+        .wrap button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2196f3; /* Màu nền xanh dương */
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .wrap button:hover {
+            background-color: #1976d2; /* Màu xanh đậm hơn khi hover */
+        }
+
+        /* Link tạo tài khoản */
+        p {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        p a {
+            color: #1565c0;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        p a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Bắt đầu form login -->
+    <div class="main">
+        <h1>Login</h1>
+        <h3>Enter your login credentials</h3>
+
+        <!-- Form đăng nhập -->
+        <form action="" method="POST">
+            <!-- Tên người dùng -->
+            <label for="username">Username</label>
+            <input type="text" placeholder="Enter Username" id="username" name="username" required/>
+
+            <!-- Mật khẩu -->
+            <label for="psw">Password</label>
+            <input type="password" placeholder="Enter Password" name="password" id="psw" required />
+
+            <!-- Nút gửi form -->
+            <div class="wrap">
+                <button type="submit" name="Submit">Submit</button>
+            </div>
+        </form>
+
+        <!-- Liên kết tới trang đăng ký -->
+        <p>Not registered?
+            <a href="Register.html" name="CreateAnAccount">Create an account</a>
+        </p>
+    </div>
+</body>
+
+</html>

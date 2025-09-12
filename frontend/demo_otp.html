@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo OTP</title>
+    <link rel="stylesheet" href="styles_otp.css">
+</head>
+<body class="light-mode">
+    <div class="sky">
+        <div class="moon"></div>
+        <div class="stars"></div>
+        <div class="clouds"></div>
+        <div class="sun"></div>
+    </div>
+
+    <div class="container">
+        <h1>Demo OTP</h1>
+        
+        <div class="theme-toggle">
+            <button id="theme-toggle-btn">Toggle Dark/Light Mode</button>
+        </div>
+
+        <div class="input-section">
+            <div class="form-group">
+                <label for="secret-key">Secret Key:</label>
+                <input type="text" id="secret-key" placeholder="Enter your secret key" value="JBSWY3DPEHPK3PXP">
+            </div>
+            
+            <div class="form-group">
+                <label for="issuer">Issuer:</label>
+                <input type="text" id="issuer" placeholder="Enter issuer name" value="Demo App">
+            </div>
+            
+            <div class="form-group">
+                <label for="account">Account/Username:</label>
+                <input type="text" id="account" placeholder="Enter account or username" value="user@example.com">
+            </div>
+
+            <button id="generate-btn">Generate OTP & QR Code</button>
+        </div>
+
+        <div class="result-section">
+            <div class="otp-result">
+                <h2>OTP Value</h2>
+                <div id="otp-value" class="otp-display">------</div>
+                <div id="totp-countdown" class="countdown-timer"></div>
+                <div class="countdown-container">
+                    <div id="countdown-progress" class="countdown-progress"></div>
+                </div>
+            </div>
+
+            <div class="qr-result">
+                <h2>QR Code</h2>
+                <div id="qrcode"></div>
+                <p id="uri-text" class="uri-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script_otp.js"></script>
+</body>
+</html>

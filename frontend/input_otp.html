@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhập mã OTP hoặc quét QR (Tông Tím)</title>
+    <link rel="stylesheet" href="input_otp.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Verify account</h2>
+        <p>Use your phone's QR scanner or input the OTP code below.</p>
+
+        <div class="qr-section">
+            <img src="" alt="QR code" class="qr-code-image">
+        </div>
+
+        <div class="or-separator">hoặc</div>
+
+        <div class="otp-section">
+            <p>Input OTP</p>
+            <div class="otp-container" id="otp-inputs">
+                <input type="tel" class="otp-input" maxlength="1" id="otp-1">
+                <input type="tel" class="otp-input" maxlength="1" id="otp-2">
+                <input type="tel" class="otp-input" maxlength="1" id="otp-3">
+                <input type="tel" class="otp-input" maxlength="1" id="otp-4">
+                <input type="tel" class="otp-input" maxlength="1" id="otp-5">
+                <input type="tel" class="otp-input" maxlength="1" id="otp-6">
+            </div>
+            <div>
+                <button class="action-button" onclick="checkOtp()">Verify account</button>
+            </div>
+            <div>
+                <a class="action-button demo-link" href="demo_otp.html">Demo Otp</a>
+            </div>
+        </div>
+    </div>
+    <script src="input_otp.js"></script>
+</body>
+</html>

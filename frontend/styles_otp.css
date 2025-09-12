@@ -1,0 +1,273 @@
+/* Hiệu ứng chuyển nền khi đổi theme */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  transition: background 0.6s ease, color 0.4s ease;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* === LIGHT MODE === */
+body.light-mode {
+  background: linear-gradient(to bottom, #87ceeb, #e0f7ff, #fff);
+  color: #222;
+}
+
+/* Mặt trời */
+.light-mode .sun {
+  position: absolute;
+  top: 80px;
+  right: 120px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fffacd, #ffeb3b, #fbc02d);
+  box-shadow: 0 0 40px 15px rgba(255, 223, 0, 0.6);
+  z-index: 0;
+}
+
+/* Container clouds */
+.light-mode .clouds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.light-mode .cloud {
+  position: absolute;
+  width: 200px;
+  height: 60px;
+  background: #fff;
+  border-radius: 100px;
+  opacity: 0.85;
+  filter: blur(1.5px);
+  animation: floatCloud linear infinite;
+}
+
+.light-mode .cloud::before,
+.light-mode .cloud::after {
+  content: "";
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.light-mode .cloud::before {
+  width: 100px;
+  height: 100px;
+  top: -40px;
+  left: 20px;
+}
+
+.light-mode .cloud::after {
+  width: 120px;
+  height: 120px;
+  top: -35px;
+  left: 95px;
+}
+
+@keyframes floatCloud {
+  from { left: -250px; }
+  to { left: 110%; }
+}
+
+/* === DARK MODE === */
+body.dark-mode {
+  background: radial-gradient(circle at top, #1a1a2e, #0f3460, #000);
+  color: #eee;
+}
+
+/* Mặt trăng */
+.dark-mode .moon {
+  position: absolute;
+  top: 80px;
+  right: 120px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, #f5f3ce, #d9d773);
+  box-shadow: 0 0 30px 12px rgba(255, 255, 200, 0.6);
+  z-index: 0;
+}
+
+/* Container stars */
+.dark-mode .stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.dark-mode .star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation: twinkle 2.5s infinite alternate;
+}
+
+@keyframes twinkle {
+  0%   { opacity: 0.2; transform: scale(1); }
+  50%  { opacity: 1;   transform: scale(1.3); }
+  100% { opacity: 0.2; transform: scale(1); }
+}
+
+/* === FORM CONTAINER (dùng chung cho cả 2 theme) === */
+.container {
+  position: relative;
+  z-index: 2; /* Luôn nổi trên sao và mây */
+  border-radius: 20px;
+  padding: 25px;
+  max-width: 420px;
+  width: 90%;
+  margin: 60px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  backdrop-filter: blur(12px);
+}
+
+/* Light form */
+.light-mode .container {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 20px rgba(135, 206, 250, 0.5);
+}
+
+/* Dark form */
+.dark-mode .container {
+  background: rgba(20, 20, 40, 0.85);
+  box-shadow: inset 0 0 10px rgba(255,255,255,0.1),
+              0 0 25px rgba(108,92,231,0.5);
+}
+
+/* === AVATAR PREVIEW === */
+.avatar-preview {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.light-mode .avatar-preview {
+  border: 3px solid #4dabf7;
+  box-shadow: 0 0 15px rgba(100, 181, 246, 0.7);
+}
+
+.dark-mode .avatar-preview {
+  border: 3px solid #6c5ce7;
+  box-shadow: 0 0 15px rgba(108, 92, 231, 0.7);
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* === INPUT FILE CUSTOM === */
+input[type="file"] {
+  display: none;
+}
+
+.custom-file-upload {
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.light-mode .custom-file-upload {
+  background: linear-gradient(135deg, #4dabf7, #2196f3);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
+}
+.light-mode .custom-file-upload:hover {
+  background: linear-gradient(135deg, #64b5f6, #42a5f5);
+  transform: scale(1.05);
+}
+
+.dark-mode .custom-file-upload {
+  background: linear-gradient(135deg, #6c5ce7, #4834d4);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(108, 92, 231, 0.5);
+}
+.dark-mode .custom-file-upload:hover {
+  background: linear-gradient(135deg, #8e44ad, #6c5ce7);
+  transform: scale(1.05);
+}
+
+/* === BUTTONS === */
+button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.light-mode button {
+  background: #0288d1;
+  color: #fff;
+}
+.light-mode button:hover {
+  background: #03a9f4;
+}
+
+.dark-mode button {
+  background: #27ae60;
+  color: #fff;
+}
+.dark-mode button:hover {
+  background: #2ecc71;
+}
+
+/* === INPUT TEXT === */
+input[type="text"] {
+  width: 100%;
+  max-width: 350px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  margin-bottom: 12px;
+  transition: all 0.3s;
+}
+
+.light-mode input[type="text"] {
+  border: 1px solid #4dabf7;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+.light-mode input[type="text"]:focus {
+  border-color: #2196f3;
+  box-shadow: 0 0 6px #42a5f5;
+  outline: none;
+}
+
+.dark-mode input[type="text"] {
+  border: 1px solid #aa66ff;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.dark-mode input[type="text"]:focus {
+  border-color: #d580ff;
+  box-shadow: 0 0 6px #d580ff;
+  outline: none;
+}

@@ -23,8 +23,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 # KHỞI TẠO FLASK APP
 # Flask app là core của web server, xử lý tất cả HTTP requests
 app = Flask(__name__,
-            template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
-            static_folder=os.path.join(os.path.dirname(__file__), '..', 'templates')
+            template_folder=os.path.join(os.path.dirname(__file__), '..', 'frontend'),
+            static_folder=os.path.join(os.path.dirname(__file__), '..', 'frontend')
+            
             )
 
 # BẬT CORS (Cross-Origin Resource Sharing)

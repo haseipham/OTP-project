@@ -21,6 +21,7 @@ def add_new_user(username: str) -> tuple[bool, str]:
         error_message = f"Error: User '{username}' already exists."
         print(error_message)
         return (False, error_message)
+      
     finally:
         conn.close()
 

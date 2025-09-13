@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhập mã OTP hoặc quét QR (Tông Tím)</title>
-    <link rel="stylesheet" href="input_otp.css">
+    <link rel="stylesheet" href="/input_otp.css">
+    <!-- QR Code Generation Library -->
+    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -12,10 +14,11 @@
         <p>Use your phone's QR scanner or input the OTP code below.</p>
 
         <div class="qr-section">
-            <img src="" alt="QR code" class="qr-code-image">
+            <img src="" alt="QR code" class="qr-code-image" id="qr-code-image">
+            <div id="qr-placeholder" style="display: none;">Loading QR code...</div>
         </div>
 
-        <div class="or-separator">hoặc</div>
+        <div class="or-separator">Điền vào đây</div>
 
         <div class="otp-section">
             <p>Input OTP</p>
@@ -35,6 +38,66 @@
             </div>
         </div>
     </div>
-    <script src="input_otp.js"></script>
+    
+    <!-- QR Code Generation Script -->
+    <script>
+        // Generate QR code when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            const username = localStorage.getItem('username');
+            if (!username) {
+                alert('User not found. Please login again.');
+                window.location.href = 'Login.html';
+                return;
+            }
+
+            try {
+                // Get QR code image from server
+                const response = await fetch('/api/v2/qr_code/' + username);
+                const data = await response.json();
+                
+                if (response.ok && data.qr_code) {
+                    // Display QR code image from server
+                    const qrImage = document.getElementById('qr-code-image');
+                    const qrPlaceholder = document.getElementById('qr-placeholder');
+                    
+                    qrImage.src = data.qr_code;
+                    qrImage.style.display = 'block';
+                    qrPlaceholder.style.display = 'none';
+                    qrImage.alt = 'QR Code for OTP setup';
+                    
+                    console.log('QR code loaded successfully from server');
+                } else {
+                    // Fallback to URI display if QR generation fails
+                    const uriResponse = await fetch('/api/v2/otpauth_uri/' + username);
+                    const uriData = await uriResponse.json();
+                    
+                    if (uriResponse.ok && uriData.totp_uri) {
+                        const qrImage = document.getElementById('qr-code-image');
+                        const qrPlaceholder = document.getElementById('qr-placeholder');
+                        
+                        qrImage.style.display = 'none';
+                        qrPlaceholder.innerHTML = `
+                            <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; margin: 10px 0;">
+                                <p><strong>OTP URI:</strong></p>
+                                <p style="font-size: 12px; word-break: break-all;">${uriData.totp_uri}</p>
+                                <p style="font-size: 14px; color: #666;">Copy this URI to your authenticator app</p>
+                                <p style="font-size: 12px; color: #999;">QR Code generation failed: ${data.error || 'Unknown error'}</p>
+                            </div>
+                        `;
+                        qrPlaceholder.style.display = 'block';
+                    } else {
+                        document.getElementById('qr-placeholder').innerHTML = 'Failed to load OTP data';
+                        document.getElementById('qr-placeholder').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading QR code:', error);
+                document.getElementById('qr-placeholder').innerHTML = 'Error loading QR code: ' + error.message;
+                document.getElementById('qr-placeholder').style.display = 'block';
+            }
+        });
+    </script>
+    
+    <script src="/input_otp.js"></script>
 </body>
 </html>

@@ -68,7 +68,7 @@ themeToggleBtn.addEventListener('click', function () {
 });
 
 // Tạo OTP và mã QR
-    generateBtn.addEventListener('click', function() {
+    generateBtn.addEventListener('click', async function() {
         const secretKey = document.getElementById('secret-key').value.trim();
         const issuer = document.getElementById('issuer').value.trim();
         const account = document.getElementById('account').value.trim();
@@ -83,7 +83,7 @@ themeToggleBtn.addEventListener('click', function () {
         startTOTPCountdown();
         
         // Tạo QR code
-        generateQRCode(secretKey, issuer, account);
+        await generateQRCode(secretKey, issuer, account);
     });
     
     // Chuyển đổi Base32 sang hex (để tạo OTP)
@@ -109,32 +109,34 @@ themeToggleBtn.addEventListener('click', function () {
         return hex;
     }
     
-    // Tạo OTP
-    function generateTOTP(secret) {
-        // Lấy thời gian hiện tại tính bằng giây và chia cho 30 để có bộ đếm thời gian
-        const epoch = Math.floor(Date.now() / 1000);
-        const timeCounter = Math.floor(epoch / 30);
-        
-        // Chuyển đổi bộ đếm thời gian sang hex và pad thành 16 ký tự
-        const timeHex = timeCounter.toString(16).padStart(16, '0');
-        
-        // Convert the secret from base32 to hex
-        const secretHex = base32ToHex(secret);
-        
-        // Tạo HMAC-SHA1
-        const shaObj = new jsSHA("SHA-1", "HEX");
-        shaObj.setHMACKey(secretHex, "HEX");
-        shaObj.update(timeHex);
-        const hmac = shaObj.getHMAC("HEX");
-        
-        // Lấy offset (nibly cuối cùng của hmac)
-        const offset = parseInt(hmac.substring(hmac.length - 1), 16);
-        
-        // Lấy 4 byte bắt đầu từ vị trí offset
-        const otp = (parseInt(hmac.substr(offset * 2, 8), 16) & 0x7fffffff) % 1000000;
-        
-        // Hiển thị OTP với số 0 đứng đầu nếu cần
-        otpValueDisplay.textContent = otp.toString().padStart(6, '0');
+    // Tạo OTP using server-side core algorithm
+    async function generateTOTP(secret) {
+        console.log('generateTOTP called with secret:', secret);
+        try {
+            const response = await fetch('/api/v2/demo_totp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ secret: secret })
+            });
+            
+            console.log('Server response status:', response.status);
+            const data = await response.json();
+            console.log('Server response data:', data);
+            
+            if (response.ok && data.otp_code) {
+                // Hiển thị OTP với số 0 đứng đầu nếu cần
+                otpValueDisplay.textContent = data.otp_code.toString().padStart(6, '0');
+                console.log('TOTP generated via server:', data.otp_code);
+            } else {
+                throw new Error(data.error || 'Failed to generate TOTP');
+            }
+            
+        } catch (error) {
+            console.error('Error generating TOTP:', error);
+            otpValueDisplay.textContent = 'ERROR';
+        }
     }
     
     // Bắt đầu bộ đếm ngược TOTP
@@ -167,27 +169,57 @@ themeToggleBtn.addEventListener('click', function () {
         countdownInterval = setInterval(updateCountdown, 1000);
     }
     
-    // Tạo QR code
-    function generateQRCode(secret, issuer, account) {
+    // Tạo QR code using server-side generation
+    async function generateQRCode(secret, issuer, account) {
         // Xóa mã QR trước đó
         qrcodeContainer.innerHTML = '';
         
-        // Tạo otpauth URI - format: otpauth://totp/Issuer:Account?secret=SECRET&issuer=Issuer
-        const uri = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(account)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}`;
-        
-        // Hiển thị URI
-        uriText.textContent = uri;
-        
-        // Tạo QR code mới
-        new QRCode(qrcodeContainer, {
-            text: uri,
-            width: 200,
-            height: 200,
-            colorDark: document.body.classList.contains('dark-mode') ? "#ffffff" : "#000000",
-            colorLight: document.body.classList.contains('dark-mode') ? "#1e1e1e" : "#ffffff",
-        });
+        try {
+            // Call server-side QR code generation
+            const response = await fetch('/api/v2/demo_qr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    secret: secret,
+                    issuer: issuer,
+                    account: account
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.qr_code) {
+                // Display URI
+                uriText.textContent = data.uri;
+                
+                // Create img element and set source
+                const img = document.createElement('img');
+                img.src = data.qr_code;
+                img.style.width = '200px';
+                img.style.height = '200px';
+                img.alt = 'QR Code';
+                
+                qrcodeContainer.appendChild(img);
+                
+                console.log('QR code generated successfully via server');
+            } else {
+                throw new Error(data.error || 'Failed to generate QR code');
+            }
+            
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            qrcodeContainer.innerHTML = '<p style="color: red;">Error generating QR code: ' + error.message + '</p>';
+            
+            // Fallback: show URI text
+            const uri = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(account)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}`;
+            uriText.textContent = uri;
+        }
     }
     
     // Tạo TOTP ban đầu với các giá trị mặc định
-    generateBtn.click();
+    setTimeout(() => {
+        generateBtn.click();
+    }, 100);
 });

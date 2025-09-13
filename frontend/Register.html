@@ -146,5 +146,31 @@
             </p>
         </div>
     </form>
+
+    <script>
+    document.querySelector('form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('psw').value;
+        const email = document.getElementById('email').value;
+        const phone = document.getElementById('sdt').value;
+
+        const response = await fetch('/api/v2/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password, email, phone })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert('Registration successful. Please save your OTP secret: ' + data.otp_secret);
+            window.location.href = 'Login.html';
+        } else {
+            alert('Registration failed: ' + data.error);
+        }
+    });
+    </script>
 </body>
 </html>

@@ -131,6 +131,30 @@
             <a href="Register.html" name="CreateAnAccount">Create an account</a>
         </p>
     </div>
+    # thêm mới
+    <script>
+    document.querySelector('form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('psw').value;
+
+        const response = await fetch('/api/v2/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            localStorage.setItem('username', data.user);
+            window.location.href = 'input_otp.html';
+        } else {
+            alert('Login failed: ' + data.error);
+        }
+    });
+</script>
 </body>
 
 </html>

@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-<<<<<<< HEAD
+
 def setup_database():
     """Thiết lập database với đầy đủ các bảng và trường cần thiết"""
     

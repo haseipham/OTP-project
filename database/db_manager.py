@@ -171,10 +171,7 @@ def get_user_info(username: str) -> dict | None:
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     
-    cursor.execute(
-        "SELECT username, email, phone_number FROM users WHERE username = ?",
-        (username,)
-    )
+    cursor.execute("SELECT username, email, phone_number FROM users WHERE username = ?", (username,))
     
     result = cursor.fetchone()
     conn.close()

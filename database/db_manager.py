@@ -1,3 +1,5 @@
+# db_manager.py
+
 import sqlite3
 import os
 from werkzeug.security import generate_password_hash, check_password_hash #Password hashing (for security)
@@ -21,7 +23,7 @@ def add_new_user(username: str, password: str, email: str = '', phone: str = '')
     
     conn = get_db_connection()
     cursor = conn.cursor()
-
+    
     try:
         # Hash password trước khi lưu
         hashed_password = generate_password_hash(password)
@@ -33,9 +35,9 @@ def add_new_user(username: str, password: str, email: str = '', phone: str = '')
         )
         conn.commit()
         print(f"User '{username}' added successfully.")
-        return (True, secret)
+        return (True, "REGISTERED SUCCESSFULLY!")
     except sqlite3.IntegrityError:
-        error_message = f"Error: User '{username}' already exists."
+        error_message = f"Error: Username or Email already exists."
         print(error_message)
         return (False, error_message)
     except Exception as e:
@@ -52,14 +54,13 @@ def get_user_secret(username: str) -> str | None:
     
     cursor.execute("SELECT secret_key FROM users WHERE username = ?", (username,))
     result = cursor.fetchone()
-    
     conn.close()
-    
+  
     if result:
-        return result['secret_key']
-    
-    print(f"User '{username}' not found in the database.")
-    return None
+        return result[0] 
+    else:
+        print(f"User '{username}' not found in the database.")
+        return None
 
 def verify_user_credentials(username: str, password: str) -> bool:
     """Xác thực thông tin đăng nhập của user"""

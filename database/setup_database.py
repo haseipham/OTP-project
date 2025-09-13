@@ -1,21 +1,27 @@
 import sqlite3
 
-# Kết nối tới database (sẽ tự động tạo file nếu chưa có)
-conn = sqlite3.connect('2fa_database.db')
-cursor = conn.cursor()
+DATABASE_FILE = '2fa_database.db'
 
+def initialize_database():
+    # Kết nối tới database (sẽ tự động tạo file nếu chưa có)
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
 
-#Câu lệnh SQL để tạo bảng
-# - id: Khóa chính, tự động tăng
-# - username: Tên người dùng, là duy nhất (không thể trùng)
-# - secret_key: Chuỗi Base32 chứa secret key cho 2FA
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE,
-    secret_key TEXT NOT NULL
-)
-''')
+    # Câu lệnh SQL để tạo bảng
+    create_table_query = """
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        phone_number TEXT,
+        password_hash TEXT NOT NULL,
+        secret_key TEXT 
+    );
+    """
+    
+    cursor.execute(create_table_query)
+    conn.commit()
+    conn.close()
 
-conn.commit()
-conn.close()
+if __name__ == "__main__":
+    initialize_database()

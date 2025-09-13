@@ -11,7 +11,7 @@ CÁC TÍNH NĂNG CHÍNH
 - Tự động import routes từ backend/routes.py
 - Trang chủ với hướng dẫn API endpoints
 """
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_cors import CORS
 import sys
 import os
@@ -27,7 +27,7 @@ app = Flask(__name__,
             static_folder=os.path.join(os.path.dirname(__file__), '..', 'frontend')
             
             )
-
+app.secret_key = 'otp_demo_secret_key'
 # BẬT CORS (Cross-Origin Resource Sharing)
 # Cho phép frontend (chạy trên domain/port khác) gọi API đến backend
 # Nếu không có CORS, browser sẽ chặn requests từ frontend đến backend
@@ -44,14 +44,55 @@ app.register_blueprint(otp_bp_v2)
 
 # ROOT ENDPOINT - TRANG CHỦ API
 # Trả về thông tin cơ bản và danh sách endpoints available
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
     """
     TRANG CHỦ - HIỂN THỊ GIAO DIỆN WEB
     
     Truy cập: http://localhost:5000
     """
-    return render_template('index(test).html')
+    return render_template('Register.html')
+
+@app.route('/Login.html')
+def login():
+    return render_template('Login.html')
+
+@app.route('/Register.html')
+def register():
+    return render_template('Register.html')
+
+@app.route('/input_otp.html')
+def input_otp():
+    return render_template('input_otp.html')
+
+@app.route('/demo_otp.html')
+def demo_otp():
+    return render_template('demo_otp.html')
+
+@app.route('/congratulations.html')
+def congratulations():
+    return render_template('congratulations.html')
+
+# Static file routes
+@app.route('/input_otp.css')
+def input_otp_css():
+    return app.send_static_file('input_otp.css')
+
+@app.route('/input_otp.js')
+def input_otp_js():
+    return app.send_static_file('input_otp.js')
+
+@app.route('/styles_otp.css')
+def styles_otp_css():
+    return app.send_static_file('styles_otp.css')
+
+@app.route('/script_otp.js')
+def script_otp_js():
+    return app.send_static_file('script_otp.js')
+
+@app.route('/demo_script.js')
+def demo_script_js():
+    return app.send_static_file('demo_script.js')
 
 
 # KHỞI CHẠY SERVER

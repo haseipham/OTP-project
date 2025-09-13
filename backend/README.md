@@ -2,6 +2,8 @@ OTP Backend API - Hướng dẫn test
 
 Đây là backend API cho hệ thống OTP (TOTP/HOTP) sử dụng Flask. Tài liệu này hướng dẫn cách test toàn bộ hệ thống từ đầu.
 
+We are using pyotp ONLY for generating random Base32 secrets, NOT for the actual OTP algorithm!
+
 ## Thứ tự test được khuyến nghị
 
 1. POST /generate_secret
